@@ -1,0 +1,44 @@
+# WallWhisper - 家庭隐形英语外教 - Docker Compose 部署
+#
+# === 路由器/远程部署 (从镜像仓库拉取) ===
+#   IMAGE=your-registry/wallwhisper:latest docker-compose up -d
+#
+# === 本地开发 (本地构建) ===
+#   docker-compose up -d --build
+#
+# 通用命令:
+#   docker-compose logs -f wallwhisper  # 查看日志
+#   docker-compose restart wallwhisper  # 重启
+#   docker-compose down                 # 停止
+
+services:
+  wallwhisper:
+    image: ${IMAGE:-wallwhisper:local}
+    build: .
+    container_name: wallwhisper
+    # 关键: host 网络模式，容器直接使用宿主机网络
+    # 这样既能访问内网摄像头，又能访问外网 API
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      # 配置文件 (Docker 专用配置，ffmpeg_path 等已适配)
+      - ./config.docker.yaml:/app/config.yaml:ro
+      # 萤石 Token 持久化 (容器重启后不用重新获取)
+      - ./ezviz_token:/app/ezviz_token
+      # 日志持久化
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+    # ========== 资源限制 (保护路由器/宿主机核心功能) ==========
+    # 小米路由器总内存仅 786MB，可用约 260MB
+    # WallWhisper 日常内存 60-80MB，峰值 ~100MB
+    # 如果你的设备内存充裕，可以适当调高
+    mem_limit: 128m           # 硬限制：超过直接 OOM kill
+    mem_reservation: 64m      # 软限制：内存紧张时优先回收到此值
+    memswap_limit: 192m       # 内存+swap 总量上限 (防止无限 swap 拖垮 IO)
+    cpus: 0.5                 # 最多用 0.5 核 (路由器共 4 核)
+    cpu_shares: 256           # CPU 权重 256 (默认1024)，低优先级
+    pids_limit: 32            # 限制进程数，防止 fork bomb
+    oom_score_adj: 500        # OOM 优先级调高：内存不够时优先杀 WallWhisper，保路由器

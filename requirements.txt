@@ -1,0 +1,6 @@
+openai>=1.0.0
+tencentcloud-sdk-python>=3.0.0
+requests>=2.28.0
+pyyaml>=6.0
+websocket-client>=1.6.0
+pyaudio>=0.2.13

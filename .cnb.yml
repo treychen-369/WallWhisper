@@ -1,0 +1,42 @@
+# Emily 家庭隐形英语外教 - CNB CI/CD 流水线
+# 触发条件: push 到 main 分支
+# 构建: ARM64 Docker 镜像 (适配小米7000路由器)
+# 推送: CNB 制品库 → 路由器通过外网 docker pull 拉取
+
+main:
+  push:
+    - services:
+        - docker  # CNB 内置 Docker + Buildx + QEMU, 默认 builder 已支持 arm64
+      stages:
+        # 1. 准备镜像标签
+        - name: set docker tag
+          script: |
+            echo -n "${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}:${CNB_COMMIT_SHORT}"
+          exports:
+            info: IMAGE_TAG
+
+        - name: set latest tag
+          script: |
+            echo -n "${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}:latest"
+          exports:
+            info: IMAGE_TAG_LATEST
+
+        # 2. 构建 ARM64 镜像并推送 (使用默认 builder, 自带 QEMU 模拟)
+        - name: build and push arm64
+          script: |
+            docker buildx build \
+              --platform linux/arm64 \
+              --tag $IMAGE_TAG \
+              --tag $IMAGE_TAG_LATEST \
+              --push \
+              .
+
+        # 3. 完成
+        - name: done
+          script: |
+            echo "ARM64 image built and pushed!"
+            echo "  Image: $IMAGE_TAG"
+            echo "  Latest: $IMAGE_TAG_LATEST"
+            echo ""
+            echo "Deploy on router:"
+            echo "  docker pull $IMAGE_TAG_LATEST"

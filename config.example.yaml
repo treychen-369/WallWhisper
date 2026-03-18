@@ -1,0 +1,163 @@
+# ============================================
+# Emily 家庭隐形英语外教 - V2 配置模板
+# 复制为 config.yaml 后，填入真实密钥与家庭信息
+# ============================================
+
+# AI 大模型配置（DeepSeek / OpenAI 兼容）
+ai:
+  api_key: "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+  model: "deepseek-chat"
+  base_url: "https://api.deepseek.com"
+  timeout_seconds: 30
+
+# OpenClaw Emily API（可选；启用后优先走统一人设/记忆）
+openclaw_emily:
+  enabled: false
+  api_url: "https://your-openclaw-server.example.com/api/emily/speak"
+  api_token: "your-openclaw-bearer-token"
+  timeout: 30
+
+# 腾讯云 WebSocket 流式 TTS
+tts:
+  app_id: 0
+  secret_id: "your-tencent-secret-id"
+  secret_key: "your-tencent-secret-key"
+  voice_type: 101009          # 英文女声
+  codec: "pcm"                # 必须保持 pcm，流式播放和摄像头喇叭链路依赖此格式
+  sample_rate: 16000
+  speed: 0
+  volume: 0
+  speak_timeout_seconds: 90
+  synthesize_timeout_seconds: 60
+
+# 萤石摄像头联动配置
+ezviz:
+  app_key: "your-ezviz-app-key"
+  app_secret: "your-ezviz-app-secret"
+  device_serial: "YOUR_DEVICE_SERIAL"    # 萤石摄像头序列号（设备标签上可以找到）
+  channel_no: 1
+  poll_interval: 5
+  cooldown: 60
+  alarm_types:
+    - "人体检测"
+    - "移动侦测"
+
+# 摄像头喇叭推送（RTSP backchannel）
+camera_speaker:
+  enabled: false
+  cam_ip: "YOUR_CAMERA_IP"              # 摄像头局域网 IP，如 192.168.1.100
+  cam_rtsp_port: 554
+  cam_user: "admin"
+  cam_password: "YOUR_CAMERA_PASSWORD"   # 摄像头验证码（设备底部标签上可以找到）
+  ffmpeg_path: "ffmpeg"
+  sample_rate: 16000
+
+# 摄像头麦克风配置（可选，覆盖 camera_speaker 的 VAD 参数）
+# 连接信息复用 camera_speaker，这里只配摄像头麦克风专属参数
+# camera_mic:
+#   vad_silence_threshold: 300    # 摄像头远场拾音，阈值可能需要调低
+#   vad_silence_duration_ms: 1500 # 连续静音多久判定说完(ms)
+
+# 语音识别 ASR 配置（腾讯云一句话识别，密钥复用 TTS 的）
+asr:
+  engine_type: "16k_zh-PY"      # 引擎: 16k_zh-PY(中英粤混合) / 16k_en(英文) / 16k_zh(中文)
+  smart_engine: true             # 智能双引擎: 纯英文内容自动用 16k_en 精修
+  sample_rate: 16000
+  vad_silence_threshold: 500    # VAD 静音阈值
+  vad_silence_duration_ms: 1500 # 连续静音多久判定说完(ms)
+  listen_timeout: 8             # 等待开口超时(秒)
+  listen_max_duration: 15       # 最长录音(秒)
+
+# 对话模式（Emily 说完后聆听回应，实现多轮对话）
+conversation:
+  enabled: false                # 是否启用对话模式（pass_by/interact 触发后尝试对话）
+  max_rounds: 3                 # 默认最大对话轮数
+  pass_by_max_rounds: 3         # 路过打招呼: 最多对话轮数
+  interact_max_rounds: 5        # 停留互动教学: 最多对话轮数
+  listen_timeout: 8             # 每轮等待开口超时(秒)
+  listen_max_duration: 15       # 每轮最长录音(秒)
+
+# 深夜静默保护（只影响被动触发，不影响 scheduled）
+quiet_hours:
+  enabled: true
+  start: "22:00"
+  end: "06:00"
+
+# 交互策略
+interaction:
+  pass_by_cooldown: 120
+  interact_cooldown: 180
+  dual_window: 60             # 双镜头联合判断窗口（秒）：广角+云台同时触发 → interact
+
+# 按时间段匹配的场景配置（被动触发）
+# 根据你的家庭作息时间自定义
+time_scenes:
+  - start: "06:00"
+    end: "09:00"
+    target: "family"
+    description: "晨间唤醒"
+    pass_by:
+      type: "pass_by_hello"
+      description: "早安打招呼"
+    interact:
+      type: "daily_lesson"
+      description: "晨间英语互动"
+
+  - start: "17:00"
+    end: "20:30"
+    target: "kid"
+    description: "回家后亲子英语"
+    pass_by:
+      type: "pass_by_hello"
+      description: "放学后欢迎回来"
+    interact:
+      type: "daily_lesson"
+      description: "游戏化英语互动"
+
+  - start: "20:30"
+    end: "22:00"
+    target: "kid"
+    description: "睡前轻互动"
+    pass_by:
+      type: "pass_by_hello"
+      description: "睡前轻声问候"
+    interact:
+      type: "story_time"
+      description: "睡前故事/轻互动"
+
+# 定时播报任务（主动触发）
+scheduled_tasks:
+  enabled: true
+  tasks:
+    - time: "07:30"
+      repeat: "daily"
+      target: "family"
+      type: "daily_briefing"
+      description: "晨间英语播报"
+      content_hint: "A cheerful morning greeting, one useful phrase, and one short family-friendly sentence."
+
+    - time: "20:45"
+      repeat: "daily"
+      target: "kid"
+      type: "bedtime_story"
+      description: "睡前英语故事"
+      content_hint: "A very short, warm bedtime story for a toddler."
+
+# 家庭成员信息（用于个性化生成，请替换为你的家庭信息）
+family:
+  members:
+    - name: "Dad"               # 替换为你的英文名/昵称
+      role: "dad"
+      english_level: "beginner" # beginner / intermediate / advanced
+      interests: "technology, travel"
+
+    - name: "YourKid"           # 替换为孩子的英文名/昵称
+      role: "kid"
+      english_level: "beginner"
+      age: 3                    # 孩子年龄，Emily 会据此调整难度
+      interests: "Frozen, Elsa, singing, dancing"  # 孩子的兴趣爱好
+
+# 日志
+logging:
+  level: "INFO"
+  file: "logs/emily.log"

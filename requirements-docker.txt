@@ -1,0 +1,7 @@
+# Emily Docker 部署依赖
+# 注意: 不包含 pyaudio (路由器无音频设备, 使用摄像头喇叭输出)
+openai>=1.0.0
+tencentcloud-sdk-python>=3.0.0
+requests>=2.28.0
+pyyaml>=6.0
+websocket-client>=1.6.0

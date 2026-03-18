@@ -1,0 +1,52 @@
+# ============================================
+# WallWhisper - 家庭隐形英语外教 - Git 忽略规则
+# ============================================
+
+# 实际配置文件（含密钥，绝对不能提交！）
+config.yaml
+config.docker.yaml
+
+# 萤石 Token 持久化目录
+ezviz_token/
+
+# 运行时生成目录
+audio/
+logs/
+memory/
+backups/
+
+# 密钥文件
+*.secret
+*.csv
+*.cookie
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# 临时音频文件
+*.wav
+*.mp3
+
+# 临时脚本 (以下划线开头)
+_*.py
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CodeBuddy
+.codebuddy/
